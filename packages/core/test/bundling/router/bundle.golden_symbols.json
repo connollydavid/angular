@@ -249,6 +249,9 @@
     "name": "GuardsCheckStart"
   },
   {
+    "name": "HREF_RESOURCE_TAGS"
+  },
+  {
     "name": "HistoryStateManager"
   },
   {
@@ -622,6 +625,9 @@
   },
   {
     "name": "SEGMENT_RE"
+  },
+  {
+    "name": "SRC_RESOURCE_TAGS"
   },
   {
     "name": "SIGNAL"

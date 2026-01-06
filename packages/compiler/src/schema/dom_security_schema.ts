@@ -68,6 +68,10 @@ export function SECURITY_SCHEMA(): {[k: string]: SecurityContext} {
       'object|codebase',
       'object|data',
       'script|src',
+      // The below two are for Script SVG
+      // See: https://developer.mozilla.org/en-US/docs/Web/API/SVGScriptElement/href
+      'script|href',
+      'script|xlink:href',
     ]);
   }
   return _SECURITY_SCHEMA;
