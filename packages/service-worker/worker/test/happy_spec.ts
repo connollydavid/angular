@@ -1703,6 +1703,11 @@ import {envIsSupported} from '../testing/utils';
           expect(redirectReq.cache).toBe('no-store');
         });
 
+        it('does not follow redirects when redirect policy is error', async () => {
+          await expectAsync(
+            makeRequest(scope, '/lazy/redirected.txt', undefined, {redirect: 'error'}),
+          ).toBeRejected();
+        });
       });
     });
 
