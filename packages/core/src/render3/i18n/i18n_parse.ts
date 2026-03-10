@@ -290,7 +290,7 @@ export function i18nAttributesFirstPass(tView: TView, index: number, values: str
         // many previous bindings there have already been.
         generateBindingUpdateOpCodes(
             updateOpCodes, message, previousElementIndex, attrName, countBindings(updateOpCodes),
-            null);
+            URI_ATTRS[attrName.toLowerCase()] ? _sanitizeUrl : null);
       }
     }
     tView.data[index] = updateOpCodes;
