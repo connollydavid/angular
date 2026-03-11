@@ -93,6 +93,16 @@ const ARIA_ATTRS = tagSet(
 
 export const VALID_ATTRS = merge(URI_ATTRS, HTML_ATTRS, ARIA_ATTRS);
 
+/**
+ * Attributes that are potential attack vectors and may need to be sanitized.
+ */
+export const SENSITIVE_ATTRS = merge(
+  URI_ATTRS,
+  // Note: we don't include these attributes in `URI_ATTRS`, because `URI_ATTRS` also
+  // determines whether an attribute should be dropped when sanitizing an HTML string.
+  tagSet('action,formaction,data,codebase'),
+);
+
 // Elements whose content should not be traversed/preserved, if the elements themselves are invalid.
 //
 // Typically, `<invalid>Some content</invalid>` would traverse (and in this case preserve)

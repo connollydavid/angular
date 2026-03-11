@@ -9,7 +9,7 @@ import '../../util/ng_dev_mode';
 import '../../util/ng_i18n_closure_mode';
 
 import {XSS_SECURITY_URL} from '../../error_details_base_url';
-import {getTemplateContent, URI_ATTRS, VALID_ATTRS, VALID_ELEMENTS} from '../../sanitization/html_sanitizer';
+import {getTemplateContent, SENSITIVE_ATTRS, VALID_ATTRS, VALID_ELEMENTS} from '../../sanitization/html_sanitizer';
 import {getInertBodyHelper} from '../../sanitization/inert_body';
 import {_sanitizeUrl} from '../../sanitization/url_sanitizer';
 import {assertDefined, assertEqual, assertGreaterThanOrEqual, assertOneOf, assertString} from '../../util/assert';
@@ -290,7 +290,7 @@ export function i18nAttributesFirstPass(tView: TView, index: number, values: str
         // many previous bindings there have already been.
         generateBindingUpdateOpCodes(
             updateOpCodes, message, previousElementIndex, attrName, countBindings(updateOpCodes),
-            URI_ATTRS[attrName.toLowerCase()] ? _sanitizeUrl : null);
+            SENSITIVE_ATTRS[attrName.toLowerCase()] ? _sanitizeUrl : null);
       }
     }
     tView.data[index] = updateOpCodes;
@@ -665,7 +665,7 @@ function walkIcuTree(
             const hasBinding = !!attr.value.match(BINDING_REGEXP);
             if (hasBinding) {
               if (VALID_ATTRS.hasOwnProperty(lowerAttrName)) {
-                if (URI_ATTRS[lowerAttrName]) {
+                if (SENSITIVE_ATTRS[lowerAttrName]) {
                   generateBindingUpdateOpCodes(
                       update, attr.value, newIndex, attr.name, 0, _sanitizeUrl);
                 } else {
@@ -679,7 +679,7 @@ function walkIcuTree(
                         `(see ${XSS_SECURITY_URL})`);
               }
             } else if (VALID_ATTRS[lowerAttrName]) {
-              if (URI_ATTRS[lowerAttrName]) {
+              if (SENSITIVE_ATTRS[lowerAttrName]) {
                 // Don't sanitize, because no value is acceptable in sensitive attributes.
                 // Translators are not allowed to create URIs.
                 if (typeof ngDevMode !== 'undefined' && ngDevMode) {
