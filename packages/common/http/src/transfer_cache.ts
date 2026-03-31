@@ -42,10 +42,14 @@ import {isPlatformServer} from '@angular/common';
  * @param includePostRequests Enables caching for POST requests. By default, only GET and HEAD
  *     requests are cached. This option can be enabled if POST requests are used to retrieve data
  *     (for example using GraphQL).
+ * @param includeRequestsWithAuthHeaders Enables caching of requests containing `Authorization`,
+ *     `Proxy-Authorization`, or `Cookie` headers. By default, these requests are excluded from
+ *     caching.
  *
  * @publicApi
  */
 export type HttpTransferCacheOptions = {
+  includeRequestsWithAuthHeaders?: boolean;
   includeHeaders?: string[];
   filter?: (req: HttpRequest<unknown>) => boolean;
   includePostRequests?: boolean;
@@ -104,6 +108,8 @@ export function transferCacheInterceptorFn(
     (requestMethod === 'POST' && !globalOptions.includePostRequests && !requestOptions) ||
     (requestMethod !== 'POST' && !ALLOWED_METHODS.includes(requestMethod)) ||
     requestOptions === false || //
+    // Do not cache requests with authentication or cookie headers unless explicitly enabled.
+    (!globalOptions.includeRequestsWithAuthHeaders && hasAuthHeaders(req)) ||
     globalOptions.filter?.(req) === false
   ) {
     return next(req);
@@ -180,6 +186,16 @@ export function transferCacheInterceptorFn(
     }),
   );
 }
+
+/** @returns true when the request contains authentication or cookie headers. */
+function hasAuthHeaders(req: HttpRequest<unknown>): boolean {
+  return (
+    req.headers.has('authorization') ||
+    req.headers.has('proxy-authorization') ||
+    req.headers.has('cookie')
+  );
+}
+
 
 function getFilteredHeaders(
   headers: HttpHeaders,
