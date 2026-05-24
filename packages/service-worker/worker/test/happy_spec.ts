@@ -1614,6 +1614,18 @@ import {envIsSupported} from '../testing/utils';
         expect((bazReq as any).unknownOption).toBeUndefined();
       });
 
+      it(`passes 'credentials: omit' through to the server`, async () => {
+        // Request a lazy-cached asset (so that it is fetched from the network) and provide an
+        // explicit anonymous credentials mode.
+        const reqInit = {credentials: 'omit'};
+        expect(await makeRequest(scope, '/baz.txt', undefined, reqInit)).toBe('this is baz');
+
+        // Verify that the explicit `'omit'` value was preserved (instead of being replaced by the
+        // default `'same-origin'`).
+        const [bazReq] = server.getRequestsFor('/baz.txt');
+        expect(bazReq.credentials).toBe('omit');
+      });
+
       describe('for redirect requests', () => {
         it('passes headers through to the server', async () => {
           // Request a redirected, lazy-cached asset (so that it is fetched from the network) and
@@ -1648,6 +1660,27 @@ import {envIsSupported} from '../testing/utils';
           expect(redirectReq.mode).toBe('cors'); // The default value.
           expect((redirectReq as any).unknownOption).toBeUndefined();
         });
+
+        it('does not follow redirects when redirect policy is error', async () => {
+          await expectAsync(
+            makeRequest(scope, '/lazy/redirected.txt', undefined, {redirect: 'error'}),
+          ).toBeRejected();
+        });
+
+        it(`passes 'credentials: omit' through to the server`, async () => {
+          // Request a redirected, lazy-cached asset (so that it is fetched from the network) and
+          // provide an explicit anonymous credentials mode.
+          const reqInit = {credentials: 'omit'};
+          expect(await makeRequest(scope, '/lazy/redirected.txt', undefined, reqInit)).toBe(
+            'this was a redirect too',
+          );
+
+          // Verify that the explicit `'omit'` value was preserved across the redirect
+          // reconstruction (instead of being replaced by the default `'same-origin'`).
+          const [redirectReq] = server.getRequestsFor('/lazy/redirect-target.txt');
+          expect(redirectReq.credentials).toBe('omit');
+        });
+
       });
     });
 
