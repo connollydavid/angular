@@ -626,13 +626,13 @@ export class NgOptimizedImage implements OnInit, OnChanges, OnDestroy {
   private generatePlaceholder(placeholderInput: string | boolean): string | boolean | null {
     const {placeholderResolution} = this.config;
     if (placeholderInput === true) {
-      return `url(${this.callImageLoader({
+      return `url("${this.callImageLoader({
         src: this.ngSrc,
         width: placeholderResolution,
         isPlaceholder: true,
-      })})`;
+      })}")`;
     } else if (typeof placeholderInput === 'string' && placeholderInput.startsWith('data:')) {
-      return `url(${placeholderInput})`;
+      return `url("${placeholderInput}")`;
     }
     return null;
   }
