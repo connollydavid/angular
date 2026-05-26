@@ -33,6 +33,7 @@ interface RequestParams {
   observe?: 'body' | 'response';
   transferCache?: {includeHeaders: string[]} | boolean;
   headers?: {[key: string]: string};
+  withCredentials?: boolean;
   body?: RequestBody;
 }
 
@@ -362,6 +363,35 @@ describe('TransferCache', () => {
       makeRequestAndExpectNone('/test-2?foo=1', 'POST', {transferCache: true});
     });
 
+<<<<<<< HEAD
+=======
+    it('should not cache request that requires authorization by default', async () => {
+      makeRequestAndExpectOne('/test-auth', 'foo', {
+        headers: {Authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
+      });
+
+      makeRequestAndExpectOne('/test-auth', 'foo');
+    });
+
+    it('should not cache request that requires proxy authorization by default', async () => {
+      makeRequestAndExpectOne('/test-auth', 'foo', {
+        headers: {'Proxy-Authorization': 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
+      });
+
+      makeRequestAndExpectOne('/test-auth', 'foo');
+    });
+
+    it('should not cache requests with credentials', async () => {
+      makeRequestAndExpectOne('/test-auth', 'foo', {
+        withCredentials: true,
+      });
+
+      makeRequestAndExpectOne('/test-auth', 'foo', {
+        withCredentials: true,
+      });
+    });
+
+>>>>>>> 9940ffd781 (fix(http): exclude withCredentials requests from transfer cache)
     it('should cache POST with the differing body in string form', () => {
       makeRequestAndExpectOne('/test-1', null, {method: 'POST', transferCache: true, body: 'foo'});
       makeRequestAndExpectNone('/test-1', 'POST', {transferCache: true, body: 'foo'});
@@ -485,6 +515,35 @@ describe('TransferCache', () => {
         makeRequestAndExpectOne('/exclude?foo=1', 'foo');
       });
 
+<<<<<<< HEAD
+=======
+      it(`should cache request that requires authorization when 'includeRequestsWithAuthHeaders' is 'true'`, async () => {
+        makeRequestAndExpectOne('/test-auth', 'foo', {
+          headers: {Authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
+        });
+
+        makeRequestAndExpectNone('/test-auth');
+      });
+
+      it(`should cache request that requires proxy authorization when 'includeRequestsWithAuthHeaders' is 'true'`, async () => {
+        makeRequestAndExpectOne('/test-auth', 'foo', {
+          headers: {'Proxy-Authorization': 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
+        });
+
+        makeRequestAndExpectNone('/test-auth');
+      });
+
+      it(`should not cache requests with credentials when 'includeRequestsWithAuthHeaders' is 'true'`, async () => {
+        makeRequestAndExpectOne('/test-auth', 'foo', {
+          withCredentials: true,
+        });
+
+        makeRequestAndExpectOne('/test-auth', 'foo', {
+          withCredentials: true,
+        });
+      });
+
+>>>>>>> 9940ffd781 (fix(http): exclude withCredentials requests from transfer cache)
       it('should cache a POST request', () => {
         makeRequestAndExpectOne('/include?foo=1', 'post-body', {method: 'POST'});
 

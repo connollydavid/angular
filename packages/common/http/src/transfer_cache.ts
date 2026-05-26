@@ -44,7 +44,7 @@ import {isPlatformServer} from '@angular/common';
  *     (for example using GraphQL).
  * @param includeRequestsWithAuthHeaders Enables caching of requests containing `Authorization`,
  *     `Proxy-Authorization`, or `Cookie` headers. By default, these requests are excluded from
- *     caching.
+ *     caching. Requests sent using `withCredentials` are also excluded by default.
  *
  * @publicApi
  */
@@ -104,10 +104,12 @@ export function transferCacheInterceptorFn(
   // In the following situations we do not want to cache the request
   if (
     !isCacheActive ||
+    requestOptions === false ||
+    // Do not cache requests sent with credentials.
+    req.withCredentials ||
     // POST requests are allowed either globally or at request level
     (requestMethod === 'POST' && !globalOptions.includePostRequests && !requestOptions) ||
     (requestMethod !== 'POST' && !ALLOWED_METHODS.includes(requestMethod)) ||
-    requestOptions === false || //
     // Do not cache requests with authentication or cookie headers unless explicitly enabled.
     (!globalOptions.includeRequestsWithAuthHeaders && hasAuthHeaders(req)) ||
     globalOptions.filter?.(req) === false
