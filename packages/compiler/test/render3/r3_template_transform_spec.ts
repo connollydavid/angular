@@ -728,6 +728,14 @@ describe('R3 template transform', () => {
         ['Text', 'a'],
       ]);
     });
+
+    it('should not ignore namespaced SVG <style> elements', () => {
+      expectFromHtml('<svg><style>.a { fill: none; }</style></svg>').toEqual([
+        ['Element', ':svg:svg'],
+        ['Element', ':svg:style'],
+        ['Text', '.a { fill: none; }'],
+      ]);
+    });
   });
 
   describe('<link rel="stylesheet">', () => {
