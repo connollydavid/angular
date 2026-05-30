@@ -20,6 +20,7 @@ export const enum RuntimeErrorCode {
 
   // I18n errors
   INVALID_DIGIT_INFO = 2306,
+    SUSPICIOUS_DATE_FORMAT = 2300,
 
   // NgForOf errors
   NG_FOR_MISSING_DIFFER = -2200,
