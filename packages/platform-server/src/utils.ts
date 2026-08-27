@@ -7,6 +7,7 @@
  */
 
 import {ApplicationRef, InjectionToken, PlatformRef, Provider, Renderer2, StaticProvider, Type, ɵannotateForHydration as annotateForHydration, ɵIS_HYDRATION_DOM_REUSE_ENABLED as IS_HYDRATION_DOM_REUSE_ENABLED, ɵSSR_CONTENT_INTEGRITY_MARKER as SSR_CONTENT_INTEGRITY_MARKER, ɵwhenStable as whenStable} from '@angular/core';
+import {BootstrapContext} from '@angular/platform-browser';
 
 import {PlatformState} from './platform_state';
 import {platformServer} from './server';
@@ -134,6 +135,7 @@ function sanitizeServerContext(serverContext: string): string {
   return context.length > 0 ? context : DEFAULT_SERVER_CONTEXT;
 }
 
+
 /**
  * Bootstraps an application using provided NgModule and serializes the page content to string.
  *
@@ -153,21 +155,36 @@ export async function renderModule<T>(moduleType: Type<T>, options: {
 }): Promise<string> {
   const {document, url, extraProviders: platformProviders} = options;
   const platformRef = createServerPlatform({document, url, platformProviders});
-  const moduleRef = await platformRef.bootstrapModule(moduleType);
-  const applicationRef = moduleRef.injector.get(ApplicationRef);
-  return _render(platformRef, applicationRef);
+
+  try {
+    const moduleRef = await platformRef.bootstrapModule(moduleType);
+    const applicationRef = moduleRef.injector.get(ApplicationRef);
+    return _render(platformRef, applicationRef);
+  } finally {
+    if (!platformRef.destroyed) platformRef.destroy();
+  }
 }
 
 /**
  * Bootstraps an instance of an Angular application and renders it to a string.
-
- * ```typescript
- * const bootstrap = () => bootstrapApplication(RootComponent, appConfig);
- * const output: string = await renderApplication(bootstrap);
+ *
+ * @usageNotes
+ *
+ * ```ts
+ * import { BootstrapContext, bootstrapApplication } from '@angular/platform-browser';
+ * import { renderApplication } from '@angular/platform-server';
+ * import { ApplicationConfig } from '@angular/core';
+ * import { AppComponent } from './app.component';
+ *
+ * const appConfig: ApplicationConfig = { providers: [...] };
+ * const bootstrap = (context: BootstrapContext) =>
+ *   bootstrapApplication(AppComponent, config, context);
+ * const output = await renderApplication(bootstrap);
  * ```
  *
  * @param bootstrap A method that when invoked returns a promise that returns an `ApplicationRef`
- *     instance once resolved.
+ *     instance once resolved. The method is invoked with an `Injector` instance that
+ *     provides access to the platform-level dependency injection context.
  * @param options Additional configuration for the render operation:
  *  - `document` - the document of the page to render, either as an HTML string or
  *                 as a reference to the `document` instance.
@@ -178,12 +195,18 @@ export async function renderModule<T>(moduleType: Type<T>, options: {
  *
  * @publicApi
  */
-export async function renderApplication<T>(bootstrap: () => Promise<ApplicationRef>, options: {
-  document?: string|Document,
-  url?: string,
-  platformProviders?: Provider[],
-}): Promise<string> {
+export async function renderApplication<T>(
+    bootstrap: (context: BootstrapContext) => Promise<ApplicationRef>, options: {
+      document?: string|Document,
+      url?: string,
+      platformProviders?: Provider[],
+    }): Promise<string> {
   const platformRef = createServerPlatform(options);
-  const applicationRef = await bootstrap();
-  return _render(platformRef, applicationRef);
+
+  try {
+    const applicationRef = await bootstrap({platformRef});
+    return await _render(platformRef, applicationRef);
+  } finally {
+    if (!platformRef.destroyed) platformRef.destroy();
+  }
 }

@@ -17,12 +17,12 @@ import {DEFAULT_LOCALE_ID} from '../i18n/localization';
 import {LOCALE_ID} from '../i18n/tokens';
 import {ImagePerformanceWarning} from '../image_performance_warning';
 import {Type} from '../interface/type';
-import {createOrReusePlatformInjector} from '../platform/platform';
-import {PLATFORM_DESTROY_LISTENERS} from '../platform/platform_ref';
+import {ALLOW_MULTIPLE_PLATFORMS, createOrReusePlatformInjector} from '../platform/platform';
+import {PLATFORM_DESTROY_LISTENERS, PlatformRef} from '../platform/platform_ref';
+import {NgZone} from '../zone/ng_zone';
 import {assertStandaloneComponentType} from '../render3/errors';
 import {setLocaleId} from '../render3/i18n/i18n_locale_id';
 import {EnvironmentNgModuleRefAdapter} from '../render3/ng_module_ref';
-import {NgZone} from '../zone/ng_zone';
 
 import {ApplicationInitStatus} from './application_init';
 import {_callAndReportToErrorHandler, ApplicationRef} from './application_ref';
@@ -43,15 +43,25 @@ export function internalCreateApplication(config: {
   rootComponent?: Type<unknown>;
   appProviders?: Array<Provider|EnvironmentProviders>;
   platformProviders?: Provider[];
+  platformRef?: PlatformRef;
 }): Promise<ApplicationRef> {
+  const {rootComponent, appProviders, platformProviders, platformRef} = config;
   try {
-    const {rootComponent, appProviders, platformProviders} = config;
+    const platformInjector = platformRef?.injector ??
+        createOrReusePlatformInjector(platformProviders as StaticProvider[]);
+
+    if (platformInjector.get(ALLOW_MULTIPLE_PLATFORMS, false) === true && !config.platformRef) {
+      throw new RuntimeError(
+          RuntimeErrorCode.PLATFORM_NOT_FOUND,
+          ngDevMode &&
+              'Missing Platform: This may be due to using `bootstrapApplication` on the server without passing a `BootstrapContext`. ' +
+                  'Please make sure that `bootstrapApplication` is called with a `BootstrapContext.',
+      );
+    }
 
     if ((typeof ngDevMode === 'undefined' || ngDevMode) && rootComponent !== undefined) {
       assertStandaloneComponentType(rootComponent);
     }
-
-    const platformInjector = createOrReusePlatformInjector(platformProviders as StaticProvider[]);
 
     // Create root application injector based on a set of providers configured at the platform
     // bootstrap level as well as providers passed to the bootstrap call by a user.

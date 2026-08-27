@@ -5,6 +5,7 @@
 ```ts
 
 import { ApplicationRef } from '@angular/core';
+import { BootstrapContext } from '@angular/platform-browser';
 import { EnvironmentProviders } from '@angular/core';
 import * as i0 from '@angular/core';
 import * as i1 from '@angular/common/http';
@@ -36,7 +37,7 @@ export interface PlatformConfig {
 // @public @deprecated
 export const platformDynamicServer: (extraProviders?: StaticProvider[] | undefined) => PlatformRef;
 
-// @public (undocumented)
+// @public
 export const platformServer: (extraProviders?: StaticProvider[] | undefined) => PlatformRef;
 
 // @public
@@ -54,7 +55,7 @@ export class PlatformState {
 export function provideServerRendering(): EnvironmentProviders;
 
 // @public
-export function renderApplication<T>(bootstrap: () => Promise<ApplicationRef>, options: {
+export function renderApplication<T>(bootstrap: (context: BootstrapContext) => Promise<ApplicationRef>, options: {
     document?: string | Document;
     url?: string;
     platformProviders?: Provider[];

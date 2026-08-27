@@ -16,7 +16,7 @@ import {HydrationStatus, readHydrationInfo, SSR_CONTENT_INTEGRITY_MARKER} from '
 import {getComponentDef} from '@angular/core/src/render3/definition';
 import {NoopNgZone} from '@angular/core/src/zone/ng_zone';
 import {TestBed} from '@angular/core/testing';
-import {bootstrapApplication, HydrationFeature, HydrationFeatureKind, provideClientHydration} from '@angular/platform-browser';
+import {bootstrapApplication, BootstrapContext, HydrationFeature, HydrationFeatureKind, provideClientHydration} from '@angular/platform-browser';
 import {provideRouter, RouterOutlet, Routes} from '@angular/router';
 
 import {provideServerRendering} from '../public_api';

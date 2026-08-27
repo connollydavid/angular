@@ -69,7 +69,7 @@ export const TransferState: {new (): TransferStateFromCore} = TransferStateFromC
 // The below is a workaround to add a deprecated message.
 export type StateKey<T> = StateKeyFromCore<T>;
 
-export {ApplicationConfig, bootstrapApplication, BrowserModule, createApplication, platformBrowser, provideProtractorTestingSupport} from './browser';
+export {ApplicationConfig, bootstrapApplication, BootstrapContext, BrowserModule, createApplication, platformBrowser, provideProtractorTestingSupport} from './browser';
 export {Meta, MetaDefinition} from './browser/meta';
 export {Title} from './browser/title';
 export {disableDebugTools, enableDebugTools} from './browser/tools/tools';

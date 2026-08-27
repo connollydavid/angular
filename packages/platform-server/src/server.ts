@@ -22,15 +22,17 @@ import {TRANSFER_STATE_SERIALIZATION_PROVIDERS} from './transfer_state';
 
 export const INTERNAL_SERVER_PLATFORM_PROVIDERS: StaticProvider[] = [
   {provide: DOCUMENT, useFactory: _document, deps: [Injector]},
+  // Add special provider that allows multiple instances of platformServer* to be created.
+  {provide: ALLOW_MULTIPLE_PLATFORMS, useValue: true},
   {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
-  {provide: PLATFORM_INITIALIZER, useFactory: initDominoAdapter, multi: true}, {
+  {provide: PLATFORM_INITIALIZER, useFactory: initDominoAdapter, multi: true},
+  {
     provide: PlatformLocation,
     useClass: ServerPlatformLocation,
     deps: [DOCUMENT, [Optional, INITIAL_CONFIG]]
   },
   {provide: PlatformState, deps: [DOCUMENT]},
-  // Add special provider that allows multiple instances of platformServer* to be created.
-  {provide: ALLOW_MULTIPLE_PLATFORMS, useValue: true}
+
 ];
 
 function initDominoAdapter() {
@@ -80,6 +82,14 @@ function _document(injector: Injector) {
 }
 
 /**
+ * Creates a server-side instance of an Angular platform.
+ *
+ * This platform should be used when performing server-side rendering of an Angular application.
+ * Standalone applications can be bootstrapped on the server using the `bootstrapApplication`
+ * function from `@angular/platform-browser`. When using `bootstrapApplication`, the
+ * `platformServer` should be created first and passed to the bootstrap function using the
+ * `BootstrapContext`.
+ *
  * @publicApi
  */
 export const platformServer: (extraProviders?: StaticProvider[]|undefined) => PlatformRef =
