@@ -523,11 +523,13 @@ export class BindingParser {
    * @param isAttr true when binding to an attribute
    */
   private _validatePropertyOrAttributeName(
-      propName: string, sourceSpan: ParseSourceSpan, isAttr: boolean): void {
+      propName: string, sourceSpan: ParseSourceSpan, isAttr: boolean,
+      elementSelector?: string): void {
     const report = isAttr ? this._schemaRegistry.validateAttribute(propName) :
                             this._schemaRegistry.validateProperty(propName);
     if (report.error) {
       this._reportError(report.msg!, sourceSpan, ParseErrorLevel.ERROR);
+      return;
     }
   }
 

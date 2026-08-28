@@ -53,6 +53,13 @@ export function SECURITY_SCHEMA(): {[k: string]: SecurityContext} {
       'track|src',
       'video|poster',
       'video|src',
+      // SVG animation elements: binding `attributeName` can retarget arbitrary
+      // attributes (including href) at animation time, bypassing sanitization,
+      // so the value is always treated as a URL.
+      'animate|attributeName',
+      'set|attributeName',
+      'animateMotion|attributeName',
+      'animateTransform|attributeName',
     ]);
     registerContext(SecurityContext.RESOURCE_URL, [
       'applet|code',

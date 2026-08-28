@@ -6837,6 +6837,52 @@ function allTests(os: string) {
         );
       });
 
+      it('should reject attributeName bindings on SVG animation elements', () => {
+        env.write(
+          'test.ts',
+          `
+            import {Component} from '@angular/core';
+            @Component({
+              selector: 'test-cmp',
+              template: '<svg><animate [attr.attributeName]="attr"></animate></svg>',
+              standalone: false,
+            })
+            export class TestCmp {
+              attr = 'href';
+            }
+          `,
+        );
+
+        env.driveMain();
+        const jsContents = env.getContents('test.js');
+        expect(jsContents).toContain(
+          'i0.ɵɵattribute("attributeName", ctx.attr, i0.ɵɵsanitizeUrl);',
+        );
+      });
+
+      it('should sanitize attributeName property bindings on SVG animation elements', () => {
+        env.write(
+          'test.ts',
+          `
+            import {Component} from '@angular/core';
+            @Component({
+              selector: 'test-cmp',
+              template: '<svg><animate [attributeName]="attr"></animate></svg>',
+              standalone: false,
+            })
+            export class TestCmp {
+              attr = 'href';
+            }
+          `,
+        );
+
+        env.driveMain();
+        const jsContents = env.getContents('test.js');
+        expect(jsContents).toContain(
+          'i0.ɵɵproperty("attributeName", ctx.attr, i0.ɵɵsanitizeUrl);',
+        );
+      });
+
       it('should not generate sanitizers for URL properties in hostBindings fn in Component',
          () => {
            env.write(`test.ts`, `
