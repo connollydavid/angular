@@ -31,6 +31,37 @@ function createServerPlatform(options: PlatformOptions): PlatformRef {
 }
 
 /**
+ * Serializes server renders at the platform level. The server platform mutates
+ * process-global state (the platform injector registry), so overlapping renders
+ * could share or overwrite that state across requests. Each render here gets a
+ * dedicated platform that is destroyed when the render completes, and renders
+ * are chained so only one platform lifecycle is in flight at a time.
+ */
+let serverPlatformQueue: Promise<unknown> = Promise.resolve();
+
+function runWithDedicatedServerPlatform(
+    createPlatform: () => PlatformRef,
+    run: (platformRef: PlatformRef) => Promise<string>): Promise<string> {
+  const renderPromise = serverPlatformQueue.then(async () => {
+    const platformRef = createPlatform();
+    try {
+      return await run(platformRef);
+    } finally {
+      // Destroy after a tick so the rendered application's pending async
+      // tasks settle before the platform goes away, and never destroy
+      // twice (spec teardowns may already have destroyed the platform).
+      setTimeout(() => {
+        if (!platformRef.destroyed) platformRef.destroy();
+      }, 0);
+    }
+  });
+  // Keep the queue alive when a render fails; the failure itself still
+  // propagates to the caller.
+  serverPlatformQueue = renderPromise.catch(() => undefined);
+  return renderPromise;
+}
+
+/**
  * Creates a marker comment node and append it into the `<body>`.
  * Some CDNs have mechanisms to remove all comment node from HTML.
  * This behaviour breaks hydration, so we'll detect on the client side if this
@@ -152,10 +183,13 @@ export async function renderModule<T>(moduleType: Type<T>, options: {
   extraProviders?: StaticProvider[],
 }): Promise<string> {
   const {document, url, extraProviders: platformProviders} = options;
-  const platformRef = createServerPlatform({document, url, platformProviders});
-  const moduleRef = await platformRef.bootstrapModule(moduleType);
-  const applicationRef = moduleRef.injector.get(ApplicationRef);
-  return _render(platformRef, applicationRef);
+  return runWithDedicatedServerPlatform(
+      () => createServerPlatform({document, url, platformProviders}),
+      async (platformRef) => {
+        const moduleRef = await platformRef.bootstrapModule(moduleType);
+        const applicationRef = moduleRef.injector.get(ApplicationRef);
+        return _render(platformRef, applicationRef);
+      });
 }
 
 /**
@@ -183,7 +217,10 @@ export async function renderApplication<T>(bootstrap: () => Promise<ApplicationR
   url?: string,
   platformProviders?: Provider[],
 }): Promise<string> {
-  const platformRef = createServerPlatform(options);
-  const applicationRef = await bootstrap();
-  return _render(platformRef, applicationRef);
+  return runWithDedicatedServerPlatform(
+      () => createServerPlatform(options),
+      async (platformRef) => {
+        const applicationRef = await bootstrap();
+        return _render(platformRef, applicationRef);
+      });
 }
