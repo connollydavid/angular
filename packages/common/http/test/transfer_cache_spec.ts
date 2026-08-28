@@ -3,12 +3,18 @@
  * Copyright Google LLC All Rights Reserved.
  *
  * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
+ * found in the LICENSE file at https://angular.dev/license
  */
 
-import {DOCUMENT} from '@angular/common';
-import {ApplicationRef, Component, Injectable, PLATFORM_ID} from '@angular/core';
-import {makeStateKey, TransferState} from '@angular/core/src/transfer_state';
+import {DOCUMENT} from '../../index';
+import {
+  makeStateKey,
+  ApplicationRef,
+  Component,
+  Injectable,
+  PLATFORM_ID,
+  TransferState,
+} from '@angular/core';
 import {fakeAsync, flush, TestBed} from '@angular/core/testing';
 import {withBody} from '@angular/private/testing';
 import {BehaviorSubject, Observable, of} from 'rxjs';
@@ -18,23 +24,22 @@ import {
   BODY,
   CACHE_OPTIONS,
   HEADERS,
+  HTTP_TRANSFER_CACHE_ORIGIN_MAP,
   RESPONSE_TYPE,
   STATUS,
   STATUS_TEXT,
   REQ_URL,
-  URL,
   transferCacheInterceptorFn,
   withHttpTransferCache,
-  generateHash,
 } from '../src/transfer_cache';
 import {HttpTestingController, provideHttpClientTesting} from '../testing';
+import {PLATFORM_BROWSER_ID, PLATFORM_SERVER_ID} from '../../src/platform_id';
 
 interface RequestParams {
   method?: string;
   observe?: 'body' | 'response';
   transferCache?: {includeHeaders: string[]} | boolean;
   headers?: {[key: string]: string};
-  withCredentials?: boolean;
   body?: RequestBody;
 }
 
@@ -49,7 +54,11 @@ type RequestBody =
   | null;
 
 describe('TransferCache', () => {
-  @Component({selector: 'test-app-http', template: 'hello'})
+  @Component({
+    selector: 'test-app-http',
+    template: 'hello',
+    standalone: false,
+  })
   class SomeComponent {}
 
   describe('transferCacheInterceptorFn', () => {
@@ -183,6 +192,14 @@ describe('TransferCache', () => {
       return response;
     }
 
+    beforeEach(() => {
+      globalThis['ngServerMode'] = true;
+    });
+
+    afterEach(() => {
+      globalThis['ngServerMode'] = undefined;
+    });
+
     beforeEach(
       withBody('<test-app-http></test-app-http>', () => {
         TestBed.resetTestingModule();
@@ -196,7 +213,7 @@ describe('TransferCache', () => {
         TestBed.configureTestingModule({
           declarations: [SomeComponent],
           providers: [
-            {provide: PLATFORM_ID, useValue: 'server'},
+            {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
             {provide: DOCUMENT, useFactory: () => document},
             {provide: ApplicationRef, useClass: ApplicationRefPatched},
             withHttpTransferCache({}),
@@ -230,20 +247,20 @@ describe('TransferCache', () => {
 
       const transferState = TestBed.inject(TransferState);
       expect(JSON.parse(transferState.toJson()) as Record<string, unknown>).toEqual({
-        '2da5dfaf112523258ec9c26a0abe9a093b59ed7dbe5f43e4b5ee25a407ac9cf0': {
+        '2400571479': {
           [BODY]: 'foo',
           [HEADERS]: {},
           [STATUS]: 200,
           [STATUS_TEXT]: 'OK',
-          [URL]: '/test-1',
+          [REQ_URL]: '/test-1',
           [RESPONSE_TYPE]: 'json',
         },
-        '869485290d9385f3c0a9ba571918c335bbca9e03373bf8260d02f2b7dd335849': {
+        '2400572440': {
           [BODY]: 'buzz',
           [HEADERS]: {},
           [STATUS]: 200,
           [STATUS_TEXT]: 'OK',
-          [URL]: '/test-2',
+          [REQ_URL]: '/test-2',
           [RESPONSE_TYPE]: 'json',
         },
       });
@@ -364,8 +381,6 @@ describe('TransferCache', () => {
       makeRequestAndExpectNone('/test-2?foo=1', 'POST', {transferCache: true});
     });
 
-<<<<<<< HEAD
-=======
     it('should not cache request that requires authorization by default', async () => {
       makeRequestAndExpectOne('/test-auth', 'foo', {
         headers: {Authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
@@ -382,17 +397,6 @@ describe('TransferCache', () => {
       makeRequestAndExpectOne('/test-auth', 'foo');
     });
 
-    it('should not cache requests with credentials', async () => {
-      makeRequestAndExpectOne('/test-auth', 'foo', {
-        withCredentials: true,
-      });
-
-      makeRequestAndExpectOne('/test-auth', 'foo', {
-        withCredentials: true,
-      });
-    });
-
->>>>>>> 9940ffd781 (fix(http): exclude withCredentials requests from transfer cache)
     it('should cache POST with the differing body in string form', () => {
       makeRequestAndExpectOne('/test-1', null, {method: 'POST', transferCache: true, body: 'foo'});
       makeRequestAndExpectNone('/test-1', 'POST', {transferCache: true, body: 'foo'});
@@ -431,6 +435,14 @@ describe('TransferCache', () => {
     });
 
     describe('caching in browser context', () => {
+      beforeEach(() => {
+        globalThis['ngServerMode'] = false;
+      });
+
+      afterEach(() => {
+        globalThis['ngServerMode'] = undefined;
+      });
+
       beforeEach(
         withBody('<test-app-http></test-app-http>', () => {
           TestBed.resetTestingModule();
@@ -444,7 +456,7 @@ describe('TransferCache', () => {
           TestBed.configureTestingModule({
             declarations: [SomeComponent],
             providers: [
-              {provide: PLATFORM_ID, useValue: 'browser'},
+              {provide: PLATFORM_ID, useValue: PLATFORM_BROWSER_ID},
               {provide: DOCUMENT, useFactory: () => document},
               {provide: ApplicationRef, useClass: ApplicationRefPatched},
               withHttpTransferCache({}),
@@ -479,7 +491,7 @@ describe('TransferCache', () => {
           TestBed.configureTestingModule({
             declarations: [SomeComponent],
             providers: [
-              {provide: PLATFORM_ID, useValue: 'server'},
+              {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
               {provide: DOCUMENT, useFactory: () => document},
               {provide: ApplicationRef, useClass: ApplicationRefPatched},
               withHttpTransferCache({
@@ -494,6 +506,7 @@ describe('TransferCache', () => {
                 },
                 includeHeaders: ['foo', 'bar'],
                 includePostRequests: true,
+                includeRequestsWithAuthHeaders: true,
               }),
               provideHttpClient(),
               provideHttpClientTesting(),
@@ -516,8 +529,6 @@ describe('TransferCache', () => {
         makeRequestAndExpectOne('/exclude?foo=1', 'foo');
       });
 
-<<<<<<< HEAD
-=======
       it(`should cache request that requires authorization when 'includeRequestsWithAuthHeaders' is 'true'`, async () => {
         makeRequestAndExpectOne('/test-auth', 'foo', {
           headers: {Authorization: 'Basic YWxhZGRpbjpvcGVuc2VzYW1l'},
@@ -534,17 +545,6 @@ describe('TransferCache', () => {
         makeRequestAndExpectNone('/test-auth');
       });
 
-      it(`should not cache requests with credentials when 'includeRequestsWithAuthHeaders' is 'true'`, async () => {
-        makeRequestAndExpectOne('/test-auth', 'foo', {
-          withCredentials: true,
-        });
-
-        makeRequestAndExpectOne('/test-auth', 'foo', {
-          withCredentials: true,
-        });
-      });
-
->>>>>>> 9940ffd781 (fix(http): exclude withCredentials requests from transfer cache)
       it('should cache a POST request', () => {
         makeRequestAndExpectOne('/include?foo=1', 'post-body', {method: 'POST'});
 
@@ -574,35 +574,178 @@ describe('TransferCache', () => {
         expect(response.headers.keys().length).toBe(0);
       });
     });
-  });
 
-  describe('generateHash', () => {
-    async function computeNativeSha256(value: string): Promise<string> {
-      const msgUint8 = new TextEncoder().encode(value);
-      const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
-      const hashArray = Array.from(new Uint8Array(hashBuffer));
-      return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-    }
+    describe('caching with public origins', () => {
+      beforeEach(
+        withBody('<test-app-http></test-app-http>', () => {
+          TestBed.resetTestingModule();
+          isStable = new BehaviorSubject<boolean>(false);
 
-    it('should generate standard SHA-256 hashes matching Web Crypto specs', async () => {
-      const testCases = [
-        '',
-        'hello',
-        'angular',
-        'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-        'Angular 🚀',
-        'a'.repeat(55),
-        'a'.repeat(56),
-        'a'.repeat(63),
-        'a'.repeat(64),
-        'a'.repeat(65),
-        'a'.repeat(1000),
-      ];
+          @Injectable()
+          class ApplicationRefPatched extends ApplicationRef {
+            override isStable = new BehaviorSubject<boolean>(false);
+          }
 
-      for (const testCase of testCases) {
-        const expected = await computeNativeSha256(testCase);
-        expect(generateHash(testCase)).withContext(`For: ${testCase}`).toBe(expected);
-      }
+          TestBed.configureTestingModule({
+            declarations: [SomeComponent],
+            providers: [
+              {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
+              {provide: DOCUMENT, useFactory: () => document},
+              {provide: ApplicationRef, useClass: ApplicationRefPatched},
+              withHttpTransferCache({}),
+              provideHttpClient(),
+              provideHttpClientTesting(),
+              {
+                provide: HTTP_TRANSFER_CACHE_ORIGIN_MAP,
+                useValue: {
+                  'http://internal-domain.com:1234': 'https://external-domain.net:443',
+                },
+              },
+            ],
+          });
+
+          const appRef = TestBed.inject(ApplicationRef);
+          appRef.bootstrap(SomeComponent);
+          isStable = appRef.isStable as BehaviorSubject<boolean>;
+        }),
+      );
+
+      it('should cache with public origin', () => {
+        makeRequestAndExpectOne('http://internal-domain.com:1234/test-1?foo=1', 'foo');
+        const cachedRequest = makeRequestAndExpectNone(
+          'https://external-domain.net:443/test-1?foo=1',
+        );
+        expect(cachedRequest.url).toBe('https://external-domain.net:443/test-1?foo=1');
+      });
+
+      it('should cache normally when there is no mapping defined for the origin', () => {
+        makeRequestAndExpectOne('https://other.internal-domain.com:1234/test-1?foo=1', 'foo');
+        makeRequestAndExpectNone('https://other.internal-domain.com:1234/test-1?foo=1');
+      });
+
+      describe('when the origin map is configured with extra paths', () => {
+        beforeEach(
+          withBody('<test-app-http></test-app-http>', () => {
+            TestBed.resetTestingModule();
+            isStable = new BehaviorSubject<boolean>(false);
+
+            @Injectable()
+            class ApplicationRefPatched extends ApplicationRef {
+              override isStable = new BehaviorSubject<boolean>(false);
+            }
+
+            TestBed.configureTestingModule({
+              declarations: [SomeComponent],
+              providers: [
+                {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
+                {provide: DOCUMENT, useFactory: () => document},
+                {provide: ApplicationRef, useClass: ApplicationRefPatched},
+                withHttpTransferCache({}),
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                {
+                  provide: HTTP_TRANSFER_CACHE_ORIGIN_MAP,
+                  useValue: {
+                    'http://internal-domain.com:1234': 'https://external-domain.net:443/path',
+                  },
+                },
+              ],
+            });
+
+            const appRef = TestBed.inject(ApplicationRef);
+            appRef.bootstrap(SomeComponent);
+            isStable = appRef.isStable as BehaviorSubject<boolean>;
+          }),
+        );
+
+        it('should throw an error when the origin map is configured with extra paths', () => {
+          TestBed.inject(HttpClient)
+            .request('GET', 'http://internal-domain.com:1234/path/test-1')
+            .subscribe({
+              error: (error: Error) => {
+                expect(error.message).toBe(
+                  'NG02804: Angular detected a URL with a path segment in the value provided for the ' +
+                    '`HTTP_TRANSFER_CACHE_ORIGIN_MAP` token: https://external-domain.net:443/path. ' +
+                    'The map should only contain origins without any other segments.',
+                );
+              },
+            });
+        });
+      });
+
+      describe('on the client', () => {
+        beforeEach(
+          withBody('<test-app-http></test-app-http>', () => {
+            TestBed.resetTestingModule();
+            isStable = new BehaviorSubject<boolean>(false);
+
+            @Injectable()
+            class ApplicationRefPatched extends ApplicationRef {
+              override isStable = new BehaviorSubject<boolean>(false);
+            }
+
+            TestBed.configureTestingModule({
+              declarations: [SomeComponent],
+              providers: [
+                {provide: DOCUMENT, useFactory: () => document},
+                {provide: ApplicationRef, useClass: ApplicationRefPatched},
+                withHttpTransferCache({}),
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                {
+                  provide: HTTP_TRANSFER_CACHE_ORIGIN_MAP,
+                  useValue: {
+                    'http://internal-domain.com:1234': 'https://external-domain.net:443',
+                  },
+                },
+                {provide: PLATFORM_ID, useValue: PLATFORM_SERVER_ID},
+              ],
+            });
+
+            // Make a request on the server to fill the transfer state then reuse it in the browser
+            makeRequestAndExpectOne('http://internal-domain.com:1234/test-1?foo=1', 'foo');
+            const transferState = TestBed.inject(TransferState);
+
+            TestBed.resetTestingModule();
+            TestBed.configureTestingModule({
+              declarations: [SomeComponent],
+              providers: [
+                {provide: DOCUMENT, useFactory: () => document},
+                {provide: ApplicationRef, useClass: ApplicationRefPatched},
+                withHttpTransferCache({}),
+                provideHttpClient(),
+                provideHttpClientTesting(),
+                {
+                  provide: HTTP_TRANSFER_CACHE_ORIGIN_MAP,
+                  useValue: {
+                    'http://internal-domain.com:1234': 'https://external-domain.net:443',
+                  },
+                },
+                {provide: TransferState, useValue: transferState},
+                {provide: PLATFORM_ID, useValue: PLATFORM_BROWSER_ID},
+              ],
+            });
+
+            const appRef = TestBed.inject(ApplicationRef);
+            appRef.bootstrap(SomeComponent);
+            isStable = appRef.isStable as BehaviorSubject<boolean>;
+          }),
+        );
+
+        it('should throw an error when origin mapping is defined', () => {
+          TestBed.inject(HttpClient)
+            .request('GET', 'https://external-domain.net:443/test-1?foo=1')
+            .subscribe({
+              error: (error: Error) => {
+                expect(error.message).toBe(
+                  'NG02803: Angular detected that the `HTTP_TRANSFER_CACHE_ORIGIN_MAP` token is configured and ' +
+                    'present in the client side code. Please ensure that this token is only provided in the ' +
+                    'server code of the application.',
+                );
+              },
+            });
+        });
+      });
     });
   });
 });

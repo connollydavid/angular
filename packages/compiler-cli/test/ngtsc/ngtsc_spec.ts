@@ -6876,11 +6876,11 @@ function allTests(os: string) {
           `,
         );
 
-        env.driveMain();
-        const jsContents = env.getContents('test.js');
-        expect(jsContents).toContain(
-          'i0.ɵɵproperty("attributeName", ctx.attr, i0.ɵɵsanitizeUrl);',
-        );
+        // The bound property form surfaces a compile-time diagnostic: `attributeName`
+        // cannot be property-bound on animation elements, matching the upstream fix.
+        const diags = env.driveDiagnostics();
+        expect(diags.length).toBe(1);
+        expect(diags[0].messageText).toContain('attributeName');
       });
 
       it('should not generate sanitizers for URL properties in hostBindings fn in Component',
