@@ -14,7 +14,14 @@ import {INITIAL_CONFIG, PlatformConfig} from './tokens';
 
 const RESOLVE_PROTOCOL = 'resolve:';
 
-function parseUrl(urlStr: string): {
+// Characters that different URL parsers treat differently: some strip them before
+// parsing and some keep them as part of the path, which can turn a same-origin URL
+// into a cross-origin one depending on the parser. Adapted from the upstream
+// platform-server URL hardening (GHSA-45q2 / GHSA-rfh7 / GHSA-xrxm family).
+const SUSPICIOUS_URL_CHARS_REGEX =
+    /[\u00A0\u1680\u180E\u2000-\u200F\u2028\u2029\u202F\u205F\u3000\uFEFF]/;
+
+export function parseUrl(urlStr: string): {
   hostname: string,
   protocol: string,
   port: string,
@@ -22,6 +29,16 @@ function parseUrl(urlStr: string): {
   search: string,
   hash: string,
 } {
+  // Normalize backslashes: WHATWG parsers treat them as slashes in special schemes
+  // while legacy parsers do not, so a raw `\` can hide a cross-origin hostname.
+  urlStr = urlStr.replace(/\\/g, '/');
+
+  if (SUSPICIOUS_URL_CHARS_REGEX.test(urlStr)) {
+    throw new Error(
+        `NG05703: URL ${urlStr} contains characters that are parsed inconsistently. ` +
+        'This is suspicious and may indicate a security bypass attempt.');
+  }
+
   let {hostname, protocol, port, pathname, search, hash} = new URL(urlStr, RESOLVE_PROTOCOL + '//');
 
   /**

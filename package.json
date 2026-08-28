@@ -106,7 +106,7 @@
     "convert-source-map": "^1.5.1",
     "d3": "^7.0.0",
     "diff": "^5.0.0",
-    "domino": "https://github.com/angular/domino.git#f88e5aa49cf2804d7c2df22ef1640eb4ec43dd56",
+    "domino": "https://github.com/angular/domino.git#04f987dc08ff3736b427f50941adf1722458528f",
     "hammerjs": "~2.0.8",
     "http-server": "^14.0.0",
     "jasmine": "~5.1.0",
