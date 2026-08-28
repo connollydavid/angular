@@ -7,7 +7,7 @@
  */
 
 import {CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, SchemaMetadata, SecurityContext} from '../core';
-import {isNgContainer, isNgContent} from '../ml_parser/tags';
+import {isNgContainer, isNgContent, splitNsName} from '../ml_parser/tags';
 import {dashCaseToCamelCase} from '../util';
 
 import {SECURITY_SCHEMA} from './dom_security_schema';
@@ -391,12 +391,16 @@ export class DomElementSchemaRegistry extends ElementSchemaRegistry {
     // property names do not have a security impact.
     tagName = tagName.toLowerCase();
     propName = propName.toLowerCase();
+    const [namespace] = splitNsName(tagName, false);
+
     let ctx = SECURITY_SCHEMA()[tagName + '|' + propName];
     if (ctx) {
       return ctx;
     }
-    ctx = SECURITY_SCHEMA()['*|' + propName];
-    return ctx ? ctx : SecurityContext.NONE;
+    ctx = SECURITY_SCHEMA()['*|' + propName] ??
+        (namespace ? SECURITY_SCHEMA()[`:${namespace}:*|${propName}`] : undefined) ??
+        SecurityContext.NONE;
+    return ctx;
   }
 
   override getMappedPropName(propName: string): string {
