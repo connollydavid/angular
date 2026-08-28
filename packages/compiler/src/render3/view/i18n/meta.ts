@@ -95,7 +95,7 @@ export class I18nMetaVisitor implements html.Visitor {
         } else if (attr.name.startsWith(I18N_ATTR_PREFIX)) {
           // 'i18n-*' attributes
           const name = attr.name.slice(I18N_ATTR_PREFIX.length);
-          if (isTrustedTypesSink(element.name, name)) {
+          if (isTrustedTypesSink(element.name, name) || name.toLowerCase().startsWith('on')) {
             this._reportError(
                 attr, `Translating attribute '${name}' is disallowed for security reasons.`);
           } else {

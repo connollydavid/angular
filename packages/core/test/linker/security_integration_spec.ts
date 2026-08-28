@@ -246,5 +246,13 @@ describe('security integration tests', function() {
       expect(() => TestBed.createComponent(SecuredComponent))
           .toThrowError(/Translating attribute 'innerHTML' is disallowed for security reasons./);
     });
+
+    it('should throw error on translated event attributes', () => {
+      const template = `<img src="/missing-image.png" onerror="void 0" i18n-onerror>`;
+      TestBed.overrideComponent(SecuredComponent, {set: {template}});
+
+      expect(() => TestBed.createComponent(SecuredComponent))
+          .toThrowError(/Translating attribute 'onerror' is disallowed for security reasons./);
+    });
   });
 });
