@@ -55,11 +55,16 @@ export function SECURITY_SCHEMA(): {[k: string]: SecurityContext} {
       'video|src',
       // SVG animation elements: binding `attributeName` can retarget arbitrary
       // attributes (including href) at animation time, bypassing sanitization,
-      // so the value is always treated as a URL.
+      // so the value is always treated as a URL. The bare tag rows serve the
+      // template binding sites, which query the element by its bare name; the
+      // wildcard row is what the remaining lookups converge on: directive host
+      // bindings union over the schema element keys, which are namespaced
+      // (:svg:animate), and `*` selectors query the wildcard bucket directly.
       'animate|attributeName',
       'set|attributeName',
       'animateMotion|attributeName',
       'animateTransform|attributeName',
+      '*|attributeName',
     ]);
     registerContext(SecurityContext.RESOURCE_URL, [
       'applet|code',

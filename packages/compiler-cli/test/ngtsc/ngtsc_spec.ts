@@ -6883,6 +6883,61 @@ function allTests(os: string) {
         expect(diags[0].messageText).toContain('attributeName');
       });
 
+      it('should sanitize attributeName attribute bindings in directive host bindings', () => {
+        env.write(
+          'test.ts',
+          `
+            import {Component, Directive, NgModule} from '@angular/core';
+            @Directive({selector: '[appAnim]', host: {'[attr.attributeName]': 'attr'}})
+            class AppAnimDir {
+              attr = 'href';
+            }
+            @Component({
+              selector: 'test-cmp',
+              template: '<svg><animate appAnim></animate></svg>',
+              standalone: false,
+            })
+            export class TestCmp {}
+            @NgModule({declarations: [TestCmp, AppAnimDir]})
+            class MyModule {}
+          `,
+        );
+
+        env.driveMain();
+        const jsContents = env.getContents('test.js');
+        expect(jsContents).toContain(
+          'i0.ɵɵattribute("attributeName", ctx.attr, i0.ɵɵsanitizeUrl);',
+        );
+      });
+
+      it('should sanitize attributeName attribute bindings in host bindings on universal selectors',
+         () => {
+           env.write(
+             'test.ts',
+             `
+            import {Component, Directive, NgModule} from '@angular/core';
+            @Directive({selector: '*[appAnim]', host: {'[attr.attributeName]': 'attr'}})
+            class AppAnimDir {
+              attr = 'href';
+            }
+            @Component({
+              selector: 'test-cmp',
+              template: '<svg><animate appAnim></animate></svg>',
+              standalone: false,
+            })
+            export class TestCmp {}
+            @NgModule({declarations: [TestCmp, AppAnimDir]})
+            class MyModule {}
+          `,
+           );
+
+           env.driveMain();
+           const jsContents = env.getContents('test.js');
+           expect(jsContents).toContain(
+             'i0.ɵɵattribute("attributeName", ctx.attr, i0.ɵɵsanitizeUrl);',
+           );
+         });
+
       it('should not generate sanitizers for URL properties in hostBindings fn in Component',
          () => {
            env.write(`test.ts`, `
